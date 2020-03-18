@@ -5,7 +5,7 @@ export const getAge = str => {
   var d = new Date(r[1], r[3] - 1, r[4]);
   if (d.getFullYear() == r[1] && d.getMonth() + 1 == r[3] && d.getDate() == r[4]) {
     var Y = new Date().getFullYear();
-    return "年龄   =   " + (Y - r[1]) + "   周岁";
+    return  (Y - r[1]) + "   周岁";
   }
   return "输入的日期格式错误！";
 };
