@@ -5,7 +5,7 @@
       <p class="shift-mode"><span>{{mode}}</span>
         <van-switch v-model="checked" size="24px" @change="changeSwitch" />
       </p>
-      <van-list v-model="listLoading" :finished="finished" finished-text="没有更多了" @load="queryImageList">
+      <van-list v-model="listLoading" :finished="finished" finished-text="没有更多了" @load="queryImageList('极速')">
         <!-- <van-cell v-for="item in list" :key="item" :title="item" /> -->
         <van-grid :border="false" :column-num="3">
           <van-grid-item v-for="(item,index) in imageList" :key="index">
@@ -73,7 +73,7 @@ export default {
     checked(val) {
       if (val) this.mode = '原图'
       if (!val) this.mode = '极速'
-      this.queryImageList(this.mode)
+      this.queryImageList(this.mode,'first')
     }
   },
   methods: {
@@ -81,6 +81,8 @@ export default {
       this.current = index;
     },
     changeSwitch() {
+      this.imageList=[];
+      this.pageNo=1;
       this.toast.loading({
         message: '加载中...',
         forbidClick: true
@@ -142,7 +144,8 @@ export default {
       this.pageNo=1;
       this.imageList=[];
       this.finished = false;//清空列表数据
-      this.queryImageList(this.mode);
+      this.loading = true;
+      this.queryImageList(this.mode,'first');
     },
     preview(index) {
       // let imageList=this.imageList.map((item,index,arr)=>{
@@ -174,6 +177,7 @@ export default {
         
           //this.testImg=response.data.message
           //console.log(this.testImg)
+          this.pageNo=1;
           _.queryImageList('极速');
           this.imageList=[];
 
@@ -183,29 +187,33 @@ export default {
           _.fileList = [];
           this.imageList=[];
           _.toast.success('上传成功');
+          this.pageNo=1;
           _.queryImageList('极速');
+        
         })
     },
-    queryImageList(mode) {
+    queryImageList(mode,first) {
+      let pageNo=this.pageNo;
+      this.pageNo++;
       axios({
         url: 'http://www.ourcol.com/getImageList',
         method: 'get',
-        params: { mode: mode,pageNo:this.pageNo,pageSize:this.pageSize },
+        params: { mode: mode,pageNo:pageNo,pageSize:this.pageSize },
       })
         .then(res => {
           this.isLoading = false;
           if (res.data.success) {
             console.log(res.data.result.imageList)
             let list=res.data.result.imageList;
-            list.map((item,index,arr)=>{
-              this.imageList.push(item)
-            })
-            this.listLoading = false;
             if(res.data.result.imageList.length<9){
               this.finished=true
-            }if(res.data.result.imageList.length>9){
-              this.pageNo=this.pageNo+1
+              this.listLoading = false;
             }
+            list.map((item,index,arr)=>{
+               this.imageList.push('http://www.ourcol.com/'+item.url)
+  
+            })
+       
             // let imageList = res.data.result.imageList;
             // this.imageList = imageList.map((item,index,arr)=>{
             //   return item.url
@@ -322,7 +330,7 @@ export default {
       message: '加载中...',
       forbidClick: true
     });
-    this.queryImageList('极速');
+    //this.queryImageList('极速');
 
   },
   mounted() {
