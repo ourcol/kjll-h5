@@ -142,7 +142,7 @@ export default {
       this.imageList = [];
       this.finished = false;//清空列表数据
       this.listLoading = true;
-      this.queryImageList(this.mode, 'first');
+      this.queryImageList(this.mode);
     },
     preview(index) {
       // let imageList=this.imageList.map((item,index,arr)=>{
