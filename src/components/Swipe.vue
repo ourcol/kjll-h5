@@ -11,7 +11,7 @@
   </div>
 </template>
 <script>
-import { getBirthSlot, getStudyTime } from '../utils/day'
+import { getStudyTime,getAge } from '../utils/day'
 
 export default {
   name: 'Swipe',
@@ -25,7 +25,7 @@ export default {
     }
   },
   created() {
-    this.roysAge = getBirthSlot('2018-3-25')
+    this.roysAge = getAge('2018-3-25')
     this.examDayLeft = getStudyTime('2036-06-07').day
     this.primaryTime = getStudyTime('2024-09-01').day
     this.kinderGartenTime = getStudyTime('2021-09-01').day
