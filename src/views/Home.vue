@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <van-pull-refresh v-model="isLoading" @refresh="onRefresh">
+    <!-- <van-pull-refresh v-model="isLoading" @refresh="onRefresh"> -->
       <Swipe />
       <p class="shift-mode"><span>{{mode}}</span>
         <van-switch v-model="checked" size="24px" @change="changeSwitch" />
@@ -18,7 +18,7 @@
 
       <van-divider />
       <van-uploader v-model="fileList" :before-read="beforeRead" multiple />
-    </van-pull-refresh>
+    <!-- </van-pull-refresh> -->
     <div class="save">
       <van-button color="linear-gradient(to right, #4bb0ff, #6149f6)" v-if="saveBtn" @click="saveFiles">保存至服务器</van-button>
     </div>
@@ -137,13 +137,13 @@ export default {
 
       }
     },
-    onRefresh() {
-      this.pageNo = 1;
-      this.imageList = [];
-      this.finished = false;//清空列表数据
-      this.listLoading = true;
-      this.queryImageList(this.mode);
-    },
+    // onRefresh() {
+    //   this.pageNo = 1;
+    //   this.imageList = [];
+    //   this.finished = false;//清空列表数据
+    //   this.listLoading = true;
+    //   this.queryImageList(this.mode);
+    // },
     preview(index) {
       // let imageList=this.imageList.map((item,index,arr)=>{
       //   return item.url
