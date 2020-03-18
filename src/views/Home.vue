@@ -3,11 +3,12 @@
     <van-pull-refresh v-model="isLoading" @refresh="onRefresh">
       <Swipe />
       <p class="shift-mode"><span>{{mode}}</span>
-        <van-switch v-model="checked" size="24px" />
+        <van-switch v-model="checked" size="24px" @change="changeSwitch"/>
       </p>
+      <!-- <img :src="testImg"/> -->
       <van-grid :border="false" :column-num="3">
-        <van-grid-item v-for="(img,index) in imageList" :key="index">
-          <van-image @click="preview(index)" :src="img" fit="contain" />
+        <van-grid-item v-for="(item,index) in imageList" :key="index">
+          <van-image @click="preview(index)" :src="item" fit="contain" />
         </van-grid-item>
       </van-grid>
       <van-divider />
@@ -46,7 +47,8 @@ export default {
       width: '',//原图片宽度
       height: '',//原图片高度
       checked: false,//切花极速和原图
-      mode: '极速'//模式
+      mode: '极速',//模式
+      testImg:''
     }
   },
   watch: {
@@ -60,13 +62,20 @@ export default {
     checked(val) {
       if (val) this.mode = '原图'
       if (!val) this.mode = '极速'
+      this.queryImageList(this.mode)
     }
   },
   methods: {
     onChange(index) {
       this.current = index;
     },
-    onChangeImagePreview(index) {
+    changeSwitch(){
+     this.toast.loading({
+        message: '加载中...',
+        forbidClick: true
+      });
+    },
+    onChangeImagePreview(item,index) {
       this.index = index + 1;
     },
     async beforeRead(file) {
@@ -119,9 +128,12 @@ export default {
       }
     },
     onRefresh() {
-      this.queryImageList();
+      this.queryImageList(this.mode);
     },
     preview(index) {
+      // let imageList=this.imageList.map((item,index,arr)=>{
+      //   return item.url
+      // })
       ImagePreview({
         images: this.imageList,
         startPosition: index,
@@ -131,7 +143,7 @@ export default {
     saveFiles() {
       let _ = this;
       this.toast.loading({
-        message: '请稍后...',
+        message: '加载中...',
         forbidClick: true
       });
       axios({
@@ -146,33 +158,40 @@ export default {
           console.log(response)
           this.fileList = [];
           this.toast.success('上传成功');
-          _.queryImageList();
+          //this.testImg=response.data.message
+          //console.log(this.testImg)
+          _.queryImageList('极速');
         })
         .catch(() => {
           _.toast.clear();
           _.fileList = [];
           _.toast.success('上传成功');
-          _.queryImageList();
+          _.queryImageList('极速');
         })
     },
-    queryImageList() {
+    queryImageList(mode) {
 
       axios({
         url: 'http://www.ourcol.com/getImageList',
         method: 'get',
-        data: qs.stringify({}),
+        params: {mode:mode},
       })
         .then(res => {
-          this.toast.clear();
           console.log(res)
           this.isLoading = false;
           if (res.data.success) {
-            let imageList = res.data.result.imageList;
-            this.imageList = [];
-            imageList.map((current, index) => {
-              this.$set(this.imageList, index, 'http://www.ourcol.com/uploads/' + current)
+            console.log(res.data.result.imageList)
+            this.imageList=res.data.result.imageList;
+            // let imageList = res.data.result.imageList;
+            // this.imageList = imageList.map((item,index,arr)=>{
+            //   return item.url
+            // });
+            console.log(this.imageList)
+            this.toast.clear();
+            // imageList.map((current, index) => {
+            //   this.$set(this.imageList, index, 'http://www.ourcol.com/uploads/' + current)
 
-            })
+            // })
           }
         })
         .catch(() => {
@@ -275,7 +294,11 @@ export default {
     }
   },
   created() {
-    this.queryImageList();
+     this.toast.loading({
+        message: '加载中...',
+        forbidClick: true
+      });
+    this.queryImageList('极速');
 
   },
   mounted() {
