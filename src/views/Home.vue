@@ -5,20 +5,17 @@
       <p class="shift-mode"><span>{{mode}}</span>
         <van-switch v-model="checked" size="24px" @change="changeSwitch" />
       </p>
-      <van-list v-model="listLoading" :finished="finished" finished-text="没有更多了" @load="queryImageList('极速')">
-        <!-- <van-cell v-for="item in list" :key="item" :title="item" /> -->
-        <van-grid :border="false" :column-num="3">
-          <van-grid-item v-for="(item,index) in imageList" :key="index">
-            <van-image @click="preview(index)" :src="item" fit="contain" />
-          </van-grid-item>
-        </van-grid> 
+      <div class="van-clearfix">
+        <van-list v-model="listLoading" :finished="finished" finished-text="没有更多了" @load="queryImageList('极速')">
+          <van-grid :border="false" :column-num="3">
+            <van-grid-item v-for="(item,index) in imageList" :key="index">
+              <van-image @click="preview(index)" :src="item" fit="contain" />
+            </van-grid-item>
+          </van-grid>
 
-      </van-list>
-      <!-- <van-grid :border="false" :column-num="3">
-        <van-grid-item v-for="(item,index) in imageList" :key="index">
-          <van-image @click="preview(index)" :src="item" fit="contain" />
-        </van-grid-item>
-      </van-grid> -->
+        </van-list>
+      </div>
+
       <van-divider />
       <van-uploader v-model="fileList" :before-read="beforeRead" multiple />
     </van-pull-refresh>
@@ -58,8 +55,8 @@ export default {
       mode: '极速',//模式
       listLoading: false,//列表loading
       finished: false,//列表
-      pageNo:1,
-      pageSize:9
+      pageNo: 1,
+      pageSize: 9
     }
   },
   watch: {
@@ -73,7 +70,7 @@ export default {
     checked(val) {
       if (val) this.mode = '原图'
       if (!val) this.mode = '极速'
-      this.queryImageList(this.mode,'first')
+      this.queryImageList(this.mode, 'first')
     }
   },
   methods: {
@@ -81,8 +78,8 @@ export default {
       this.current = index;
     },
     changeSwitch() {
-      this.imageList=[];
-      this.pageNo=1;
+      this.imageList = [];
+      this.pageNo = 1;
       this.toast.loading({
         message: '加载中...',
         forbidClick: true
@@ -141,11 +138,11 @@ export default {
       }
     },
     onRefresh() {
-      this.pageNo=1;
-      this.imageList=[];
+      this.pageNo = 1;
+      this.imageList = [];
       this.finished = false;//清空列表数据
-      this.loading = true;
-      this.queryImageList(this.mode,'first');
+      this.listLoading = true;
+      this.queryImageList(this.mode, 'first');
     },
     preview(index) {
       // let imageList=this.imageList.map((item,index,arr)=>{
@@ -174,46 +171,45 @@ export default {
           this.toast.clear();
           console.log(response)
           this.fileList = [];
-        
+
           //this.testImg=response.data.message
           //console.log(this.testImg)
-          this.pageNo=1;
+          this.pageNo = 1;
           _.queryImageList('极速');
-          this.imageList=[];
+          this.imageList = [];
 
         })
         .catch(() => {
           _.toast.clear();
           _.fileList = [];
-          this.imageList=[];
+          this.imageList = [];
           _.toast.success('上传成功');
-          this.pageNo=1;
+          this.pageNo = 1;
           _.queryImageList('极速');
-        
+
         })
     },
-    queryImageList(mode,first) {
-      let pageNo=this.pageNo;
+    queryImageList(mode, first) {
+      let pageNo = this.pageNo;
       this.pageNo++;
       axios({
         url: 'http://www.ourcol.com/getImageList',
         method: 'get',
-        params: { mode: mode,pageNo:pageNo,pageSize:this.pageSize },
+        params: { mode: mode, pageNo: pageNo, pageSize: this.pageSize },
       })
         .then(res => {
-          this.isLoading = false;
           if (res.data.success) {
             console.log(res.data.result.imageList)
-            let list=res.data.result.imageList;
-            if(res.data.result.imageList.length<9){
-              this.finished=true
-              this.listLoading = false;
+            let list = res.data.result.imageList;
+            if (res.data.result.imageList.length < 9) {
+              this.finished = true
             }
-            list.map((item,index,arr)=>{
-               this.imageList.push('http://www.ourcol.com/'+item.url)
-  
+            list.map((item, index, arr) => {
+              this.imageList.push('http://www.ourcol.com/' + item.url)
+
             })
-       
+            this.listLoading = false;
+
             // let imageList = res.data.result.imageList;
             // this.imageList = imageList.map((item,index,arr)=>{
             //   return item.url
