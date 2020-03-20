@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <!-- <van-pull-refresh v-model="isLoading" @refresh="onRefresh"> -->
+    <van-pull-refresh v-model="pullLoading" @refresh="onRefresh">
       <Swipe />
       <p class="shift-mode"><span>{{mode}}</span>
         <van-switch v-model="checked" size="24px" @change="changeSwitch" />
@@ -9,7 +9,7 @@
         <van-list v-model="listLoading" :finished="finished" finished-text="没有更多了" @load="queryImageList('极速')">
           <van-grid :border="false" :column-num="3">
             <van-grid-item v-for="(item,index) in imageList" :key="index">
-              <van-image @click="preview(index)" :src="item" fit="contain" />
+              <van-image @click="preview(index)" :src="item" fit="contain"  height="10rem"/>
             </van-grid-item>
           </van-grid>
 
@@ -18,7 +18,7 @@
 
       <van-divider />
       <van-uploader v-model="fileList" :before-read="beforeRead" multiple />
-    <!-- </van-pull-refresh> -->
+    </van-pull-refresh>
     <div class="save">
       <van-button color="linear-gradient(to right, #4bb0ff, #6149f6)" v-if="saveBtn" @click="saveFiles">保存至服务器</van-button>
     </div>
@@ -42,9 +42,7 @@ export default {
       current: 0,
       fileList: [],
       saveBtn: false,
-      count: 0,
-      isLoading: false,
-      show: false,
+      pullLoading: false,
       index: 0,
       formData: null,
       imageList: [],
@@ -72,6 +70,17 @@ export default {
       if (!val) this.mode = '极速'
       this.queryImageList(this.mode, 'first')
     }
+  },
+    created() {
+    this.toast.loading({
+      message: '加载中...',
+      forbidClick: true
+    });
+    //this.queryImageList('极速');
+
+  },
+  mounted() {
+
   },
   methods: {
     onChange(index) {
@@ -137,17 +146,14 @@ export default {
 
       }
     },
-    // onRefresh() {
-    //   this.pageNo = 1;
-    //   this.imageList = [];
-    //   this.finished = false;//清空列表数据
-    //   this.listLoading = true;
-    //   this.queryImageList(this.mode);
-    // },
+    onRefresh() {
+      this.pageNo = 1;
+      this.imageList = [];
+      this.finished = false;//清空列表数据
+      this.listLoading = false;//隐藏列表的加载中
+      this.queryImageList(this.mode);
+    },
     preview(index) {
-      // let imageList=this.imageList.map((item,index,arr)=>{
-      //   return item.url
-      // })
       ImagePreview({
         images: this.imageList,
         startPosition: index,
@@ -171,9 +177,6 @@ export default {
           this.toast.clear();
           console.log(response)
           this.fileList = [];
-
-          //this.testImg=response.data.message
-          //console.log(this.testImg)
           this.pageNo = 1;
           _.queryImageList('极速');
           this.imageList = [];
@@ -192,6 +195,7 @@ export default {
     queryImageList(mode, first) {
       let pageNo = this.pageNo;
       this.pageNo++;
+      this.finished=false;
       axios({
         url: 'http://www.ourcol.com/getImageList',
         method: 'get',
@@ -199,9 +203,10 @@ export default {
       })
         .then(res => {
           if (res.data.success) {
+            this.pullLoading=false;
             console.log(res.data.result.imageList)
             let list = res.data.result.imageList;
-            if (res.data.result.imageList.length < 9) {
+            if (res.data.result.imageList.length < 9) {//此为最后一页
               this.finished = true
             }
             list.map((item, index, arr) => {
@@ -209,21 +214,14 @@ export default {
 
             })
             this.listLoading = false;
-
-            // let imageList = res.data.result.imageList;
-            // this.imageList = imageList.map((item,index,arr)=>{
-            //   return item.url
-            // });
             console.log(this.imageList)
             this.toast.clear();
-            // imageList.map((current, index) => {
-            //   this.$set(this.imageList, index, 'http://www.ourcol.com/uploads/' + current)
-
-            // })
           }
         })
         .catch(() => {
           this.toast.clear();
+        this.pullLoading=false;
+
         })
     },
     isNeedFixPhoto(file) {
@@ -320,17 +318,6 @@ export default {
       }
       return new File([u8arr], filename, { type: mime });
     }
-  },
-  created() {
-    this.toast.loading({
-      message: '加载中...',
-      forbidClick: true
-    });
-    //this.queryImageList('极速');
-
-  },
-  mounted() {
-
   }
 }
 </script>

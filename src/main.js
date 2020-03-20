@@ -9,8 +9,8 @@ Vue.use(Button).use(Swipe).use(SwipeItem).use(Uploader).use(PullRefresh).use(Ima
 Vue.config.productionTip = false
 Vue.prototype.toast=Toast
 
-// const vConsole = new Vconsole()
-// Vue.use(vConsole)
+const vConsole = new Vconsole()
+Vue.use(vConsole)
 new Vue({
   router,
   store,
