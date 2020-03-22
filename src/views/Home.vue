@@ -168,7 +168,7 @@ export default {
       this.originalList=[];
       this.imageList=[];
       this.fileList=[];
-      this.queryImageList(this.mode, null, 'onRefresh');
+      this.queryImageList();
     },
     preview(index,list) {
       ImagePreview({
