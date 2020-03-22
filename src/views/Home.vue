@@ -382,6 +382,9 @@ export default {
 /deep/ .van-uploader__wrapper {
   justify-content: center;
 }
+/deep/ .van-divider{
+  margin-bottom:0;
+}
 .shot-time{
   font-size: 12px;
   color:darkgray;
