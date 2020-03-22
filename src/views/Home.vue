@@ -5,11 +5,20 @@
       <p class="shift-mode"><span>{{mode}}</span>
         <van-switch v-model="checked" size="24px" @change="changeSwitch" />
       </p>
+      <van-divider />
+
       <div class="van-clearfix">
-        <van-list v-model="listLoading" :finished="finished" finished-text="没有更多了" @load="queryImageList('极速')">
-          <van-grid :border="false" :column-num="3">
+        <van-list v-model="listLoading" :finished="finished" finished-text="没有更多了" @load="queryImageList()">
+          <van-grid :border="false" :column-num="3" v-if="mode=='极速'">
             <van-grid-item v-for="(item,index) in imageList" :key="index">
-              <van-image @click="preview(index)" :src="item" fit="contain"  height="10rem"/>
+              <van-image @click="preview(index,resizedList)" :src="item.resizedUrl" fit="contain" height="10rem" />
+              <span class="shot-time" v-if="item.dateTime">拍摄于<br/>{{item.dateTime}}</span>
+            </van-grid-item>
+          </van-grid>
+          <van-grid :border="false" :column-num="3" v-if="mode=='原图'">
+            <van-grid-item v-for="(item,index) in imageList" :key="index">
+              <van-image @click="preview(index,originalList)" :src="item.originalUrl" fit="contain" height="10rem" />
+              <span class="shot-time" v-if="item.dateTime">拍摄于<br/>{{item.dateTime}}</span>
             </van-grid-item>
           </van-grid>
 
@@ -45,7 +54,8 @@ export default {
       pullLoading: false,
       index: 0,
       formData: null,
-      imageList: [],
+      resizedList: [],
+      originalList: [],
       dealedFile: [],//被转换后的file格式
       width: '',//原图片宽度
       height: '',//原图片高度
@@ -53,6 +63,8 @@ export default {
       mode: '极速',//模式
       listLoading: false,//列表loading
       finished: false,//列表
+      dateTime:[],//时间
+      imageList:[],
       pageNo: 1,
       pageSize: 9
     }
@@ -68,10 +80,13 @@ export default {
     checked(val) {
       if (val) this.mode = '原图'
       if (!val) this.mode = '极速'
-      this.queryImageList(this.mode, 'first')
+      this.resizedList = [];
+      this.originalList = [];
+      this.imageList=[];
+      this.queryImageList('first')
     }
   },
-    created() {
+  created() {
     this.toast.loading({
       message: '加载中...',
       forbidClick: true
@@ -87,7 +102,6 @@ export default {
       this.current = index;
     },
     changeSwitch() {
-      this.imageList = [];
       this.pageNo = 1;
       this.toast.loading({
         message: '加载中...',
@@ -148,14 +162,17 @@ export default {
     },
     onRefresh() {
       this.pageNo = 1;
-      this.imageList = [];
       this.finished = false;//清空列表数据
       this.listLoading = false;//隐藏列表的加载中
-      this.queryImageList(this.mode);
+      this.resizedList=[];
+      this.originalList=[];
+      this.imageList=[];
+      this.fileList=[];
+      this.queryImageList(this.mode, null, 'onRefresh');
     },
-    preview(index) {
+    preview(index,list) {
       ImagePreview({
-        images: this.imageList,
+        images: list,
         startPosition: index,
         closeable: true
       });
@@ -166,11 +183,13 @@ export default {
         message: '加载中...',
         forbidClick: true
       });
+      console.log(this.dateTime)
       axios({
         // url: 'http://www.ourcol.com/profile',
         url: 'http://www.ourcol.com/upload',
         method: 'post',
         data: this.formData,
+        params:{dateTime:this.dateTime},
         'Content-Type': 'multipart/form-data'
       })
         .then(response => {
@@ -178,49 +197,55 @@ export default {
           console.log(response)
           this.fileList = [];
           this.pageNo = 1;
-          _.queryImageList('极速');
-          this.imageList = [];
-
+          this.resizedList = [];
+          this.originalList=[];
+          this.imageList=[];
+          _.queryImageList('first');
         })
         .catch(() => {
           _.toast.clear();
           _.fileList = [];
-          this.imageList = [];
           _.toast.success('上传成功');
           this.pageNo = 1;
-          _.queryImageList('极速');
-
+          _.queryImageList('first')
         })
+        this.dateTime=[];
     },
-    queryImageList(mode, first) {
+    queryImageList(first) {
       let pageNo = this.pageNo;
-      this.pageNo++;
-      this.finished=false;
+      if (!first) this.pageNo++;
+      if (first) {
+        this.pageNo = 1;
+        this.resizedList = [];
+        this.originalList = [];
+        this.imageList=[];
+      }
       axios({
         url: 'http://www.ourcol.com/getImageList',
         method: 'get',
-        params: { mode: mode, pageNo: pageNo, pageSize: this.pageSize },
+        params: { pageNo: pageNo, pageSize: this.pageSize },
       })
         .then(res => {
           if (res.data.success) {
-            this.pullLoading=false;
-            console.log(res.data.result.imageList)
-            let list = res.data.result.imageList;
-            if (res.data.result.imageList.length < 9) {//此为最后一页
-              this.finished = true
-            }
-            list.map((item, index, arr) => {
-              this.imageList.push('http://www.ourcol.com/' + item.url)
-
+            this.pullLoading = false;
+           res.data.result.imageList.map((item, index, arr) => {
+              this.imageList.push(item)
+              this.originalList.push(item.originalUrl);
+              this.resizedList.push(item.resizedUrl);
             })
+            if (res.data.result.imageList.length < 9) {
+              this.finished = true;
+              return
+            }else{
+              this.finished = false;
+            }
             this.listLoading = false;
-            console.log(this.imageList)
             this.toast.clear();
           }
         })
         .catch(() => {
           this.toast.clear();
-        this.pullLoading=false;
+          this.pullLoading = false;
 
         })
     },
@@ -231,6 +256,8 @@ export default {
           let Orientation = EXIF.getTag(this, 'Orientation');
           let PixelYDimension = EXIF.getTag(this, 'PixelYDimension');
           let PixelXDimension = EXIF.getTag(this, 'PixelXDimension');
+          console.log(EXIF.getTag(this, 'DateTime'));
+          that.dateTime.push(EXIF.getTag(this, 'DateTime')?EXIF.getTag(this, 'DateTime'):null);
           that.height = PixelYDimension;
           that.width = PixelXDimension;
 
@@ -355,13 +382,9 @@ export default {
 /deep/ .van-uploader__wrapper {
   justify-content: center;
 }
-/* /deep/ .van-image__img,
-.van-image__loading {
-  // height: 200px !important;
+.shot-time{
+  font-size: 12px;
+  color:darkgray;
 }
-/deep/ .van-image__img {
-  max-height: 200px;
-}
-*/
 </style>
 

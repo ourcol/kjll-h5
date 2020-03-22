@@ -1,0 +1,48 @@
+Last login: Fri Mar 20 20:53:27 on ttys001
+renmins-MacBook-Pro:~ renmin$ vim ~/.vimrc
+renmins-MacBook-Pro:~ renmin$ vim ~/.vimrc
+renmins-MacBook-Pro:~ renmin$ vim ~/.vimrc
+renmins-MacBook-Pro:~ renmin$ vim ~/.vimrc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  1 set nocompatible
+  2 set ai
+  3 set showmatch
+  4 highlight StatusLine guifg=SlateBlue guibg=Yellow
+  5 highlight StatusLineNC guifg=Gray guibg=White
+  6 syntax on
+  7 set t_CO=256
+  8 set linespace=8
+  9 set autowriteall
+ 10 set tabstop=4
+ 11 set number
+ 12 set expandtab
+ 13 set softtabstop=4
+ 14 set shiftwidth=4
+ 15 set backspace=indent,eol,start
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+-- INSERT --

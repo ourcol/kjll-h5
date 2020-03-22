@@ -38,8 +38,18 @@ export default {
 /deep/ .my-swipe .van-swipe-item {
   color: #fff;
   font-size: 20px;
-  line-height: 200px;
+  //line-height: 200px;
   text-align: center;
   background-color: #39a9ed;
 }
+/deep/ .my-swipe{
+  height: 100px;
+  margin:8px 8px;
+}
+/deep/ .van-swipe-item{
+  display:flex;
+  align-items: center;
+  justify-content: center;
+}
+
 </style>
