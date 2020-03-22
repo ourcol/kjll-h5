@@ -83,7 +83,6 @@ export default {
       this.resizedList = [];
       this.originalList = [];
       this.imageList=[];
-      this.queryImageList('first')
     }
   },
   created() {
@@ -107,6 +106,7 @@ export default {
         message: '加载中...',
         forbidClick: true
       });
+      this.queryImageList()
     },
     onChangeImagePreview(item, index) {
       this.index = index + 1;
@@ -168,7 +168,7 @@ export default {
       this.originalList=[];
       this.imageList=[];
       this.fileList=[];
-      this.queryImageList();
+      this.queryImageList('first');
     },
     preview(index,list) {
       ImagePreview({
