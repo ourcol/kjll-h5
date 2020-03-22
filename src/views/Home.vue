@@ -65,7 +65,7 @@ export default {
       finished: false,//列表
       dateTime:[],//时间
       imageList:[],
-      pageNo: 1,
+      pageNo: 0,
       pageSize: 9
     }
   },
@@ -101,7 +101,7 @@ export default {
       this.current = index;
     },
     changeSwitch() {
-      this.pageNo = 1;
+      this.pageNo = 0;
       this.toast.loading({
         message: '加载中...',
         forbidClick: true
@@ -161,8 +161,8 @@ export default {
       }
     },
     onRefresh() {
-      this.pageNo = 1;
-      this.finished = false;//清空列表数据
+      this.pageNo = 0;
+      this.finished = true;//清空列表数据
       this.listLoading = false;//隐藏列表的加载中
       this.resizedList=[];
       this.originalList=[];
@@ -212,8 +212,9 @@ export default {
         this.dateTime=[];
     },
     queryImageList(first) {
-      let pageNo = this.pageNo;
-      if (!first) this.pageNo++;
+      // let pageNo = this.pageNo;
+      // if (!first) 
+      this.pageNo++;
       if (first) {
         this.pageNo = 1;
         this.resizedList = [];
@@ -223,7 +224,7 @@ export default {
       axios({
         url: 'http://www.ourcol.com/getImageList',
         method: 'get',
-        params: { pageNo: pageNo, pageSize: this.pageSize },
+        params: { pageNo: this.pageNo, pageSize: this.pageSize },
       })
         .then(res => {
           if (res.data.success) {
