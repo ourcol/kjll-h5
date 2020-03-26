@@ -6,27 +6,24 @@
         <van-switch v-model="checked" size="24px" @change="changeSwitch" />
       </p>
       <van-divider />
-
       <div class="van-clearfix">
         <van-list v-model="listLoading" :finished="finished" finished-text="没有更多了" @load="queryImageList()">
           <van-grid :border="false" :column-num="3" v-if="mode=='极速'">
             <van-grid-item v-for="(item,index) in imageList" :key="index">
               <van-image @click="preview(index,resizedList)" :src="item.resizedUrl" fit="contain" height="10rem" />
-              <span class="shot-time" v-if="item.dateTime">拍摄于<br/>{{item.dateTime}}</span>
+              <span class="shot-time" v-if="item.dateTime">拍摄于<br />{{item.dateTime}}</span>
             </van-grid-item>
           </van-grid>
           <van-grid :border="false" :column-num="3" v-if="mode=='原图'">
             <van-grid-item v-for="(item,index) in imageList" :key="index">
               <van-image @click="preview(index,originalList)" :src="item.originalUrl" fit="contain" height="10rem" />
-              <span class="shot-time" v-if="item.dateTime">拍摄于<br/>{{item.dateTime}}</span>
+              <span class="shot-time" v-if="item.dateTime">拍摄于<br />{{item.dateTime}}</span>
             </van-grid-item>
           </van-grid>
-
         </van-list>
       </div>
-
       <van-divider />
-      <van-uploader v-model="fileList" :before-read="beforeRead" multiple />
+      <van-uploader v-model="fileList" :before-read="beforeRead" :before-delete="beforeDelete" multiple />
     </van-pull-refresh>
     <div class="save">
       <van-button color="linear-gradient(to right, #4bb0ff, #6149f6)" v-if="saveBtn" @click="saveFiles">保存至服务器</van-button>
@@ -63,26 +60,28 @@ export default {
       mode: '极速',//模式
       listLoading: false,//列表loading
       finished: false,//列表
-      dateTime:[],//时间
-      imageList:[],
+      dateTime: [],//时间
+      imageList: [],
+      fileNameList: [],//待上传图片名称列表
       pageNo: 0,
       pageSize: 9
     }
   },
   watch: {
-    fileList(val) {
+    async fileList(val) {
       if (val.length > 0) {
         this.saveBtn = true;
       } else {
         this.saveBtn = false;
       }
+      console.log(val)
     },
     checked(val) {
       if (val) this.mode = '原图'
       if (!val) this.mode = '极速'
       this.resizedList = [];
       this.originalList = [];
-      this.imageList=[];
+      this.imageList = [];
     }
   },
   created() {
@@ -90,8 +89,6 @@ export default {
       message: '加载中...',
       forbidClick: true
     });
-    //this.queryImageList('极速');
-
   },
   mounted() {
 
@@ -112,43 +109,42 @@ export default {
       this.index = index + 1;
     },
     async beforeRead(file) {
-      console.log(file.length)
       let that = this;
-      //
       if (!file.length) {//上传一张
+        this.fileNameList.push(file)
+        let DateTime = (await this.isNeedFixPhoto(file)).DateTime;
+        this.dateTime.push(DateTime);
         this.dealedFile = '';
         if (file.type !== 'image/jpeg') {
           this.toast('请上传 jpg 格式图片');
           return false;
         }
-
-        console.log(await this.isNeedFixPhoto(file))
-        if ((await this.isNeedFixPhoto(file)).flag) {
+        // console.log(await this.isNeedFixPhoto(file))
+        if ((await this.isNeedFixPhoto(file)).flag) {//需要旋转
           this.dealedFile = await this.repairPhoto(file, 1, that.width)
-          console.log(this.dealedFile)
+          // console.log(this.dealedFile)
           this.formData = new FormData();
           this.formData.append('photos', this.dealedFile)
           return true
         } else {
           this.dealedFile = file;
-          // this.formData=''
           this.formData = new FormData();
           this.formData.append('photos', file)
-          // alert(1)
-          // return true
         }
-
+        console.log(await this.isNeedFixPhoto(file).DateTime)
       } else {//上传多张
         this.formData = new FormData();
         this.dealedFile = [];
         console.log(file.length)
+        let DateTime
         file.map(async (item, index, arr) => {
           if (item.type !== 'image/jpeg') {
             this.toast('请上传 jpg 格式图片');
             return false;
           }
-          console.log(await this.isNeedFixPhoto(item))
-          if ((await this.isNeedFixPhoto(item)).flag) {
+          DateTime = (await this.isNeedFixPhoto(item)).DateTime;
+          this.dateTime.push(DateTime);
+          if ((await this.isNeedFixPhoto(item)).flag) {//需要旋转
             this.dealedFile.push(await this.repairPhoto(item, 1, that.width))
             this.formData.append('photos', await this.repairPhoto(item, 1, that.width))
             console.log(this.formData);
@@ -160,17 +156,32 @@ export default {
 
       }
     },
+    beforeDelete(file) {
+      console.log('delete', file.file.name)
+      console.log(this.fileNameList)
+      console.log(this.dateTime)
+      let index
+      this.fileNameList.map((item, ind, arr) => {
+        console.log(item.name)
+        if (item.name == file.file.name) {
+          index = ind
+          return
+        }
+      })
+      this.dateTime.splice(index, 1)
+      return true
+    },
     onRefresh() {
       this.pageNo = 0;
       this.finished = true;//清空列表数据
       this.listLoading = false;//隐藏列表的加载中
-      this.resizedList=[];
-      this.originalList=[];
-      this.imageList=[];
-      this.fileList=[];
+      this.resizedList = [];
+      this.originalList = [];
+      this.imageList = [];
+      this.fileList = [];
       this.queryImageList('first');
     },
-    preview(index,list) {
+    preview(index, list) {
       ImagePreview({
         images: list,
         startPosition: index,
@@ -178,18 +189,18 @@ export default {
       });
     },
     saveFiles() {
+      this.fileNameList = []
       let _ = this;
       this.toast.loading({
         message: '加载中...',
         forbidClick: true
       });
-      console.log(this.dateTime)
       axios({
         // url: 'http://www.ourcol.com/profile',
         url: 'http://www.ourcol.com/upload',
         method: 'post',
         data: this.formData,
-        params:{dateTime:this.dateTime},
+        params: { dateTime: this.dateTime },
         'Content-Type': 'multipart/form-data'
       })
         .then(response => {
@@ -198,8 +209,9 @@ export default {
           this.fileList = [];
           this.pageNo = 1;
           this.resizedList = [];
-          this.originalList=[];
-          this.imageList=[];
+          this.originalList = [];
+          this.imageList = [];
+          this.dateTime = [];
           _.queryImageList('first');
         })
         .catch(() => {
@@ -207,9 +219,10 @@ export default {
           _.fileList = [];
           _.toast.success('上传成功');
           this.pageNo = 1;
+          this.dateTime = [];
           _.queryImageList('first')
         })
-        this.dateTime=[];
+      this.dateTime = [];
     },
     queryImageList(first) {
       // let pageNo = this.pageNo;
@@ -219,7 +232,7 @@ export default {
         this.pageNo = 1;
         this.resizedList = [];
         this.originalList = [];
-        this.imageList=[];
+        this.imageList = [];
       }
       axios({
         url: 'http://www.ourcol.com/getImageList',
@@ -229,7 +242,7 @@ export default {
         .then(res => {
           if (res.data.success) {
             this.pullLoading = false;
-           res.data.result.imageList.map((item, index, arr) => {
+            res.data.result.imageList.map((item, index, arr) => {
               this.imageList.push(item)
               this.originalList.push(item.originalUrl);
               this.resizedList.push(item.resizedUrl);
@@ -237,7 +250,7 @@ export default {
             if (res.data.result.imageList.length < 9) {
               this.finished = true;
               return
-            }else{
+            } else {
               this.finished = false;
             }
             this.listLoading = false;
@@ -257,17 +270,15 @@ export default {
           let Orientation = EXIF.getTag(this, 'Orientation');
           let PixelYDimension = EXIF.getTag(this, 'PixelYDimension');
           let PixelXDimension = EXIF.getTag(this, 'PixelXDimension');
-          console.log(EXIF.getTag(this, 'DateTime'));
-          that.dateTime.push(EXIF.getTag(this, 'DateTime')?EXIF.getTag(this, 'DateTime'):null);
+          let DateTime = EXIF.getTag(this, 'DateTime') ? EXIF.getTag(this, 'DateTime') : null
           that.height = PixelYDimension;
           that.width = PixelXDimension;
-
           if (Orientation && Orientation != 1) {
             //图片角度不正确
-            resolve({ flag: true, Orientation: Orientation })
+            resolve({ flag: true, Orientation: Orientation, DateTime: DateTime })
           } else {
             //不需处理直接上传
-            resolve({ flag: false, Orientation: Orientation })
+            resolve({ flag: false, Orientation: Orientation, DateTime: DateTime })
           }
         });
       })
@@ -288,7 +299,7 @@ export default {
       const numb = num || 1;
       if (result.flag) {  // 处理旋转
         const resultFile = await this.best4Photo(resultBase64, Orientation, numb, w)
-        console.log(this.dataURLtoFile(resultFile, 'photos'))
+        // console.log(this.dataURLtoFile(resultFile, 'photos'))
         return this.dataURLtoFile(resultFile, 'photos')
       } else {            // 不处理旋转
         return await this.best4Photo(resultBase64, 1, numb, w)
@@ -333,7 +344,6 @@ export default {
             ctx.drawImage(this, 0, 0, imgWidth, imgHeight);
           }
           const result = canvas.toDataURL("image/jpeg", num);
-          console.log(result)
           resolve(result)
         }
       })
@@ -383,12 +393,12 @@ export default {
 /deep/ .van-uploader__wrapper {
   justify-content: center;
 }
-/deep/ .van-divider{
-  margin-bottom:0;
+/deep/ .van-divider {
+  margin-bottom: 0;
 }
-.shot-time{
+.shot-time {
   font-size: 12px;
-  color:darkgray;
+  color: darkgray;
 }
 </style>
 
